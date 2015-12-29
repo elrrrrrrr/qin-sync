@@ -27,6 +27,7 @@ function GetConf()
   else 
     call UpdateConf()
     call SaveConf()
+    call RegisterKey()
   endif
   return s:conf
 endfunction
@@ -38,6 +39,7 @@ function UpdateConf()
   let s:conf['user'] = input('user? ', 'admin')
   let s:conf['pass'] = inputsecret('pass? ', '')
   let s:conf['remote'] = input('remote_path? ', '')
+  let s:conf['port'] = input('port? ', '22')
 endfunction
 
 " 保存配置信息
@@ -47,21 +49,26 @@ endfunction
 
 " 上传主函数
 function QinSync()
+  if expand('%:t') == fnamemodify(g:qin_sync_rc, ':p:t')
+    return
+  endif
   let l:currentPath = expand('%')
   let conf = GetConf()
   let conf['localpath'] = l:currentPath
   let conf['remotepath'] = conf['remote'] . conf['localpath']
-  echo conf
 
   let sftpAction = printf('put %s %s', conf['localpath'], conf['remotepath'])
-  let expectCmd = printf('expect -c "set timeout 5; spawn sftp -P %s %s@%s; expect \"*assword:\"; send %s\r; expect \"sftp>\"; send \"%s\r\"; expect -re \"100%\"; send \"exit\r\";" > /dev/null &', conf['port'], conf['user'], conf['host'], conf['pass'], sftpAction)
+  let expectCmd = printf('expect -c "set timeout 5; spawn sftp -P %s %s@%s; expect \"*assword:\"; send %s\r; expect \"sftp>\"; send \" %s\r\"; expect -re \"100%\"; send \"exit\r\";" > /dev/null &', conf['port'], conf['user'], conf['host'], conf['pass'], sftpAction)
   " 执行上传命令，目前不返回状态
-  silent! exe expectCmd
+  silent exe '!' . expectCmd
   " 清空当前 CommandLine 信息，显示保存结果
   " 防止出现 hit-entry 提示
-  redraw
-  " 显示手动保存结果 
-  call s:logger('finished !')
+  if v:shell_error
+    call s:logger('error, type :messages show detail')
+  else
+    redraw
+    call s:logger('finished !')
+  endif
 endfunction
 
 " 日志信息
@@ -71,3 +78,4 @@ function! s:logger(msg)
   echohl None
   return 0
 endfunction
+
