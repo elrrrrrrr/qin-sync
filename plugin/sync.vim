@@ -1,6 +1,9 @@
 " 绑定按键
-function RegisterKey()
-  au BufWritePost * :call QinSync()
+function s:RegisterKey()
+  augroup QinSync
+    au BufWritePost * :call QinSync()
+  augroup END
+  let g:qin_sync_auto = 1
 endfunction
 
 " 配置文件名
@@ -12,7 +15,7 @@ endif
 " 若有配置，绑定按键在每次保存文件后，上传至服务器
 if filereadable(g:qin_sync_rc)
   let s:hasConf = 1
-  call RegisterKey()
+  call s:RegisterKey()
 else
   let s:hasConf = 0
 endif
@@ -21,20 +24,19 @@ endif
 let s:conf = {}
 
 " 获取默认配置
-function GetConf()
+function s:GetConf()
   if s:hasConf
     let s:conf = eval(join(readfile(g:qin_sync_rc)))
   else 
-    call UpdateConf()
-    call SaveConf()
-    call RegisterKey()
+    call s:UpdateConf()
+    call s:SaveConf()
+    call s:RegisterKey()
   endif
   return s:conf
 endfunction
 
-
 " 更新配置信息
-function UpdateConf()
+function s:UpdateConf()
   let s:conf['host'] = input('host? ')
   let s:conf['user'] = input('user? ', 'admin')
   let s:conf['pass'] = inputsecret('pass? ', '')
@@ -43,8 +45,18 @@ function UpdateConf()
 endfunction
 
 " 保存配置信息
-function SaveConf()
+function s:SaveConf()
   call writefile(split(string(s:conf), "\n"), g:qin_sync_rc)
+endfunction
+
+" 开启/关闭自动上传
+function QinToggle()
+  if g:qin_sync_auto  
+    au! QinSync  
+    let g:qin_sync_auto = 0
+  else
+    call s:RegisterKey()
+  endif
 endfunction
 
 " 上传主函数
@@ -53,7 +65,7 @@ function QinSync()
     return
   endif
   let l:currentPath = expand('%')
-  let conf = GetConf()
+  let conf = s:GetConf()
   let conf['localpath'] = l:currentPath
   let conf['remotepath'] = conf['remote'] . conf['localpath']
 
