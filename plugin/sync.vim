@@ -55,8 +55,10 @@ function QinToggle()
   if g:qin_sync_auto  
     au! QinSync  
     let g:qin_sync_auto = 0
+    call s:logger('disable upload on save!')
   else
     call s:RegisterKey()
+    call s:logger('enable upload on save!')
   endif
 endfunction
 
@@ -84,7 +86,7 @@ function QinSync()
   " 清空当前 CommandLine 信息，显示保存结果
   " 防止出现 hit-entry 提示
   if v:shell_error
-    call s:logger('error, type :messages show detail')
+    call s:logger('error, type :messages show detail !')
   else
     redraw
     call s:logger('finished !')
@@ -99,3 +101,6 @@ function! s:logger(msg)
   return 0
 endfunction
 
+" 暴露 Command
+command QinSync :call QinSync()
+command QinToggle :call QinToggle()
