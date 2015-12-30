@@ -47,6 +47,7 @@ endfunction
 " 保存配置信息
 function s:SaveConf()
   call writefile(split(string(s:conf), "\n"), g:qin_sync_rc)
+  let s:hasConf = 1
 endfunction
 
 " 开启/关闭自动上传
@@ -69,8 +70,15 @@ function QinSync()
   let conf['localpath'] = l:currentPath
   let conf['remotepath'] = conf['remote'] . conf['localpath']
 
+  " 若当前文件不可读，直接返回
+  if !filereadable(l:currentPath)
+    call s:logger('current path not readable !')
+    return
+  endif
+
   let sftpAction = printf('put %s %s', conf['localpath'], conf['remotepath'])
   let expectCmd = printf('expect -c "set timeout 5; spawn sftp -P %s %s@%s; expect \"*assword:\"; send %s\r; expect \"sftp>\"; send \" %s\r\"; expect -re \"100%\"; send \"exit\r\";" > /dev/null &', conf['port'], conf['user'], conf['host'], conf['pass'], sftpAction)
+
   " 执行上传命令，目前不返回状态
   silent exe '!' . expectCmd
   " 清空当前 CommandLine 信息，显示保存结果
