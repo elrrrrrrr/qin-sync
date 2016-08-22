@@ -1,3 +1,9 @@
+
+if exists('loaded_qin_sync') || &compatible || v:version < 700
+  finish
+endif
+let loaded_qin_sync = 1
+
 " 绑定按键
 function s:RegisterKey()
   augroup QinSync
